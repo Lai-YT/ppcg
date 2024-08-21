@@ -1,6 +1,6 @@
 [submodule "isl"]
 	path = isl
-	url = git://repo.or.cz/isl.git
+	url = git@github.com:Lai-YT/isl.git
 [submodule "pet"]
 	path = pet
-	url = git://repo.or.cz/pet.git
+	url = git@github.com:Lai-YT/pet.git

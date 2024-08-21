@@ -4,6 +4,7 @@
 #include <isl/ast.h>
 #include <isl/id.h>
 #include <isl/id_to_ast_expr.h>
+#include <stdbool.h>
 
 #include <pet.h>
 
@@ -36,6 +37,8 @@ struct gpu_stmt_access {
 	isl_map *tagged_access;
 	/* The reference id of the corresponding pet_expr. */
 	isl_id *ref_id;
+
+	
 
 	struct gpu_stmt_access *next;
 };
@@ -113,6 +116,18 @@ struct gpu_array_info {
 	 * It is set to NULL otherwise.
 	 */
 	isl_union_map *dep_order;
+
+	bool is_in_texture;
+
+	bool is_in_surface;
+
+	bool is_read_only;
+
+	bool is_write_only;
+	
+	long texture_cost_ideal_warp_size;
+
+	int texture_cost_ref_counter;
 };
 
 /* Represents an outer array accessed by a ppcg_kernel, localized
@@ -135,6 +150,7 @@ struct gpu_local_array_info {
 
 	int force_private;
 	int global;
+	bool is_written;
 
 	unsigned n_index;
 	isl_multi_pw_aff *bound;
@@ -223,6 +239,8 @@ struct gpu_gen {
 
 	/* Identifier of the next kernel. */
 	int kernel_id;
+
+	int kernel_cnt_prev;
 };
 
 enum ppcg_group_access_type {
@@ -372,6 +390,8 @@ struct ppcg_kernel {
 
 	int id;
 
+	int sequence_no;
+
 	isl_id_list *block_ids;
 	isl_id_list *thread_ids;
 
@@ -409,6 +429,9 @@ struct ppcg_kernel {
 	isl_union_set *sync_writes;
 
 	isl_ast_node *tree;
+
+	struct surf_read_expressions * decl;
+
 };
 
 int gpu_array_is_scalar(struct gpu_array_info *array);

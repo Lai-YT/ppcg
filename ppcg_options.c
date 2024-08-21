@@ -124,4 +124,10 @@ ISL_ARG_STR(struct ppcg_options, save_schedule_file, 0, "save-schedule",
 ISL_ARG_STR(struct ppcg_options, load_schedule_file, 0, "load-schedule",
 	"file", NULL, "load schedule from <file>, "
 	"using it instead of an isl computed schedule")
+ISL_ARG_BOOL(struct ppcg_options,use_surface_memory, 0,
+	"surface-memory", 1,
+	"Write to texture through surfaces.Device compute capability must be >= 2.0.Supported only in CUDA.")
+ISL_ARG_BOOL(struct ppcg_options,memory_opts, 0,
+	"memory-opts", 1,
+	"Enable texture, surface and constant memory optimizations. Supported only in CUDA.")
 ISL_ARGS_END

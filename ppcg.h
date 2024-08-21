@@ -106,6 +106,8 @@ struct ppcg_scop {
 	isl_id_to_ast_expr *names;
 
 	struct pet_scop *pet;
+
+	int kernels_extracted;
 };
 
 int ppcg_scop_any_hidden_declarations(struct ppcg_scop *scop);

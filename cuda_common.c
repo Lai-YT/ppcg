@@ -32,18 +32,24 @@ void cuda_open_files(struct cuda_info *info, const char *input)
     info->kernel_c = fopen(name, "w");
 
     strcpy(name + len, "_kernel.hu");
-    info->kernel_h = fopen(name, "w");
+    info->kernel_h = fopen(name, "w");		
     fprintf(info->host_c, "#include <assert.h>\n");
-    fprintf(info->host_c, "#include <stdio.h>\n");
-    fprintf(info->host_c, "#include \"%s\"\n", name);
-    fprintf(info->kernel_c, "#include \"%s\"\n", name);
+    fprintf(info->host_c, "#include <stdio.h>\n");	
+    fprintf(info->host_c, "#define HOSTCODE true \n");	
+    fprintf(info->host_c, "#include \"%s\"\n", name);	
+	
     fprintf(info->kernel_h, "#include \"cuda.h\"\n\n");
+    fprintf(info->kernel_c, "#include <stdio.h> \n");     	
+    fprintf(info->kernel_c, "#define DEVICECODE true \n");
+    fprintf(info->kernel_c, "#include \"%s\"\n", name);  	
 }
 
 /* Close all output files.
  */
 void cuda_close_files(struct cuda_info *info)
 {
+    
+  
     fclose(info->kernel_c);
     fclose(info->kernel_h);
     fclose(info->host_c);
