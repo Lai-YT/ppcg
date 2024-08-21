@@ -55,7 +55,9 @@ ppcg_SOURCES = \
 	print.h \
 	util.c \
 	util.h \
-	version.c
+	version.c \
+	texture.c \
+	texture.h
 
 TESTS = @extra_tests@
 EXTRA_TESTS = opencl_test.sh polybench_test.sh

@@ -521,8 +521,13 @@ static __isl_give isl_printer *print_scop(struct ppcg_scop *scop,
 							&ast_build_after_for,
 							&build_info);
 	}
-
+	isl_space * space = isl_ast_build_get_schedule_space(build);
+	char * temp = isl_space_to_str(space);
+	isl_space_free(space);
+	printf("\n\n\n\n Check ==== %s",temp);
 	tree = isl_ast_build_node_from_schedule(build, schedule);
+
+
 	isl_ast_build_free(build);
 
 	print_options = isl_ast_print_options_alloc(ctx);

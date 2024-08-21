@@ -24,6 +24,7 @@
 #include <isl/schedule_node.h>
 #include <isl/options.h>
 #include <isl/ast_build.h>
+#include <isl/constraint.h>
 
 #include "cpu.h"
 #include "gpu.h"
@@ -198,6 +199,8 @@ static int extract_array_info(struct gpu_prog *prog,
 	info->n_index = n_index;
 	info->linearize = prog->scop->options->linearize_device_arrays;
 
+
+
 	info->type = strdup(pa->element_type);
 	info->size = pa->element_size;
 	info->local = pa->declared && !pa->exposed;
@@ -221,6 +224,8 @@ static int extract_array_info(struct gpu_prog *prog,
 	if (!isl_multi_pw_aff_is_cst(bounds))
 		info->linearize = 1;
 	info->bound = bounds;
+
+	//printf("------------check linearize ----- %d",prog->scop->options->linearize_device_arrays);
 
 	collect_references(prog, info);
 	info->only_fixed_element = only_fixed_element_accessed(info);
@@ -311,6 +316,7 @@ void collect_order_dependences(struct gpu_prog *prog)
 
 		prog->array_order = isl_union_map_union(prog->array_order,
 					isl_union_map_copy(array->dep_order));
+
 	}
 
 	isl_union_map_free(accesses);
@@ -374,7 +380,6 @@ static int collect_array_info(struct gpu_prog *prog)
 static void free_array_info(struct gpu_prog *prog)
 {
 	int i;
-
 	for (i = 0; i < prog->n_array; ++i) {
 		free(prog->array[i].type);
 		free(prog->array[i].name);
@@ -1544,6 +1549,240 @@ error:
 	return NULL;
 }
 
+int linearize_set(isl_set * access_iter, int *block_sizes)
+{
+	int n_dim = isl_set_dim(access_iter, isl_dim_set);
+	isl_space * space = isl_space_alloc(isl_set_get_ctx(access_iter), 0, n_dim,1);
+	isl_local_space * ls = isl_local_space_from_space(isl_space_copy(space));
+	isl_map * linearization = isl_map_universe(space);
+	isl_constraint * c = isl_constraint_alloc_equality(isl_local_space_copy(ls));
+
+	int blocks[3];
+	if(n_dim==3)
+	{
+		blocks[0]  = block_sizes[2];
+		blocks[1]  = block_sizes[1];
+		blocks[2] = block_sizes[0];
+	}
+	else if(n_dim==2)
+	{
+		blocks[0] = block_sizes[1];
+		blocks[1] = block_sizes[0];
+		blocks[2] = 0;
+	}
+	else if(n_dim==1)
+ 	{
+		blocks[0] = block_sizes[0];
+		blocks[1] = 0;
+		blocks[2] = 0;
+	}
+
+	// 0 + x + y Dx + z Dx Dy - tid =0
+
+	// Following sets 0
+	c = isl_constraint_set_constant_si(c, 0);
+
+	// Following sets x
+	c = isl_constraint_set_coefficient_si(c, isl_dim_in,0, 1);
+
+	// Following sets y Dx
+	if(n_dim > 1)
+		c = isl_constraint_set_coefficient_si(c, isl_dim_in, 1, blocks[0]);
+
+	// Following sets z Dx Dy
+	if(n_dim > 2)
+		c = isl_constraint_set_coefficient_si(c, isl_dim_in, 2, blocks[0] * blocks[1]);
+
+	// Following sets -tid
+	c = isl_constraint_set_coefficient_si(c, isl_dim_out, 0, -1);
+
+	// Add constraint
+	linearization = isl_map_add_constraint(linearization, c);
+
+	isl_printer * p1 = isl_printer_to_str(isl_map_get_ctx(linearization));
+	p1 = isl_printer_print_map(p1, linearization);
+	char * d1 = isl_printer_get_str(p1);
+	printf("\n Linearization Map : %s",d1);
+	isl_printer_free(p1);
+
+
+	isl_set * linearized_iters = isl_set_apply(isl_set_copy(access_iter), linearization);
+
+	isl_printer * p = isl_printer_to_str(isl_set_get_ctx(linearized_iters));
+	p = isl_printer_print_set(p, linearized_iters);
+	char * d = isl_printer_get_str(p);
+	//printf("\n Linearized iter : %s",d);
+	isl_printer_free(p);
+
+	//printf("[3] Set size: %lu ",isl_val_get_num_si(isl_set_count_val(linearized_iters)));
+
+	isl_set * min = isl_set_lexmin(isl_set_copy(linearized_iters));
+
+ 	isl_set * max = isl_set_lexmax(isl_set_copy(linearized_iters));
+	long ideal_warp_size;
+	if(isl_set_is_singleton(min) && isl_set_is_singleton(max))
+	{
+		isl_point * p_min = isl_set_sample_point(min);
+		isl_point * p_max = isl_set_sample_point(max);
+		isl_val * min_val = isl_point_get_coordinate_val(p_min,isl_dim_set,0);
+		isl_val * max_val = isl_point_get_coordinate_val(p_max,isl_dim_set,0);
+		long lg_min = isl_val_get_num_si(min_val);
+		long lg_max = isl_val_get_num_si(max_val);
+		isl_point_free(p_min);
+		isl_point_free(p_max);
+		isl_val_free(min_val);
+		isl_val_free(max_val);
+		ideal_warp_size = lg_max - lg_min;
+	}
+	else
+	{
+		// FIXME ERROR cannot determine cost
+	}
+	isl_set_free(linearized_iters);
+	isl_local_space_free(ls);
+	return ideal_warp_size;
+}
+
+int analyze_cost_spatial_locality(isl_map *taccess, int * block_sizes)
+{
+	int in_dim = isl_map_dim(taccess, isl_dim_in);
+	isl_set * access_loc = isl_set_universe(isl_space_set_alloc(isl_map_get_ctx(taccess),0,in_dim));
+	isl_local_space * ls = isl_local_space_from_space(isl_space_set_alloc(isl_map_get_ctx(taccess),0,in_dim));
+	int i=0;
+	for(i=0;i<in_dim;i++)
+	{
+		// { [i, j, k] : 0 <= i <= 2 and 0 <= j <= 2 and 0 <= k <= 2 }
+		isl_constraint * c = isl_constraint_alloc_inequality(isl_local_space_copy(ls));
+		c = isl_constraint_set_constant_si(c, -1);
+		c = isl_constraint_set_coefficient_si(c, isl_dim_set, i, 1);
+		access_loc = isl_set_add_constraint(access_loc, c);
+
+		c = isl_constraint_alloc_inequality(isl_local_space_copy(ls));
+		c = isl_constraint_set_constant_si(c, 3);
+		c = isl_constraint_set_coefficient_si(c, isl_dim_set, i, -1);
+		access_loc = isl_set_add_constraint(access_loc, c);
+	}
+
+	//printf(" \n %d and %d \n\n", isl_map_is_injective(taccess), isl_map_is_bijective(taccess));
+	isl_printer * p = isl_printer_to_str(isl_set_get_ctx(access_loc));
+	p = isl_printer_print_set(p, access_loc);
+	char * d = isl_printer_get_str(p);
+	printf("\n Constructed Set : %s",d);
+	isl_printer_free(p);
+	//printf("\n [1] Set size: %lu ",isl_val_get_num_si(isl_set_count_val(access_loc)));
+	isl_set * access_iter = isl_set_apply(access_loc, isl_map_copy(taccess));
+	p = isl_printer_to_str(isl_set_get_ctx(access_iter));
+	p = isl_printer_print_set(p, access_iter);
+	d = isl_printer_get_str(p);
+	printf("\n Constructed Set : %s",d);
+	isl_printer_free(p);
+	//printf("\n [2] Set size: %lu ",isl_val_get_num_si(isl_set_count_val(access_iter)));
+
+	int ideal_warp_size = linearize_set(access_iter, block_sizes);
+	isl_set_free(access_iter);
+	isl_local_space_free(ls);
+	return ideal_warp_size;
+}
+const char * get_array_name(isl_map * taccess)
+{
+	isl_set * domain_set = isl_map_domain(isl_map_copy(taccess));
+	isl_id * name = isl_set_get_tuple_id(domain_set);
+	isl_set_free(domain_set);
+	const char * array_name = isl_id_get_name(name);
+	isl_id_free(name);
+	return array_name;
+}
+
+__isl_give isl_map * create_transformed_access(isl_multi_pw_aff *mpa)
+{
+	// TODO : Move this to texture.c file
+
+	// Generate original map
+	isl_map *taccess =  isl_map_from_multi_pw_aff(isl_multi_pw_aff_copy(mpa));
+
+	isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	p = isl_printer_print_map(p, taccess);
+	char * d = isl_printer_get_str(p);
+	//printf("\n Transformed Map : %s",d);
+	isl_printer_free(p);
+
+
+	// Project out the inner dimensions
+	int inner_dim = isl_map_dim(taccess, isl_dim_in);
+	taccess = isl_map_project_out(taccess, isl_dim_in,0, inner_dim);
+
+	p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	p = isl_printer_print_map(p, taccess);
+	d = isl_printer_get_str(p);
+	printf("\n Transformed Map : %s",d);
+	isl_printer_free(p);
+
+
+	// Project out all but thread dimensions
+	int param_dim = isl_map_dim(taccess, isl_dim_param);
+	int i, proj_dims=0;
+	for (i=0;i< param_dim;i++)
+	{
+		const char * dim_name = isl_map_get_dim_name(taccess, isl_dim_param, i);
+		// Note this is a hack, but will work here.
+		if(!(strlen(dim_name) ==2 && dim_name[0] == 't'))
+		{
+			proj_dims++;
+		}
+	}
+	// Assume all the dimensions are at start.
+
+	taccess = isl_map_project_out(taccess, isl_dim_param,0, proj_dims);
+
+	p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	p = isl_printer_print_map(p, taccess);
+	d = isl_printer_get_str(p);
+	printf("\n Transformed Map : %s",d);
+	isl_printer_free(p);
+
+	//isl_map_free(taccess);
+	//taccess = isl_map_compute_divs(taccess);
+	//isl_set * pset = isl_map_params(taccess);
+	//isl_set *oset = isl_map_domain(taccess);
+	int outer_dim = isl_map_dim(taccess, isl_dim_param);
+	printf("Outer_dim %d",outer_dim);
+	fflush(stdout);
+	if(!outer_dim)
+	{
+		isl_map_free(taccess);
+		return NULL;
+	}
+
+	taccess = isl_map_move_dims(taccess, isl_dim_in,0, isl_dim_param, 0, outer_dim);
+	taccess = isl_map_reverse(taccess);
+
+	//isl_map_free(taccess);
+	return taccess;
+}
+
+
+
+int texture_cost_model(isl_map * taccess, int * block_sizes)
+{
+	isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	p = isl_printer_print_map(p, taccess);
+	char * d = isl_printer_get_str(p);
+	printf("\n Transformed Map : %s",d);
+	isl_printer_free(p);
+	fflush(stdout);
+	taccess = isl_map_reset_tuple_id(taccess, isl_dim_in);
+	int ideal_warp_size = analyze_cost_spatial_locality(taccess, block_sizes);
+	return ideal_warp_size;
+
+}
+
+void update_array_cost(int ideal_warp_size,struct gpu_array_info * array)
+{
+	array->texture_cost_ideal_warp_size += ideal_warp_size;
+	array->texture_cost_ref_counter++;
+}
+
+
 /* Index transformation callback for pet_stmt_build_ast_exprs.
  *
  * "index" expresses the array indices in terms of statement iterators
@@ -1606,8 +1845,30 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	data->array = NULL;
 
 	iterator_map = isl_pw_multi_aff_copy(data->iterator_map);
-	index = isl_multi_pw_aff_pullback_pw_multi_aff(index, iterator_map);
 
+	int * sizes;
+	if(data->kernel!=NULL)
+	{
+		sizes = data->kernel->block_dim;
+		printf("\n tile sizes %d %d %d ", sizes[0], sizes[1], sizes[2]);
+	}
+	isl_printer *p = isl_printer_to_str(isl_pw_multi_aff_get_ctx(iterator_map));
+	p = isl_printer_print_pw_multi_aff(p, iterator_map);
+	char * d = isl_printer_get_str(p);
+	printf("\n Iterator Map : %s",d);
+	int n;
+	scanf(" %d", &n);
+	isl_printer_free(p);
+	p = isl_printer_to_str(isl_multi_pw_aff_get_ctx(index));
+	p = isl_printer_print_multi_pw_aff(p, index);
+	d = isl_printer_get_str(p);
+	printf("\n Original Index : %s",d);
+	scanf(" %d", &n);
+	isl_printer_free(p);
+
+
+
+	index = isl_multi_pw_aff_pullback_pw_multi_aff(index, iterator_map);
 	if (!data->kernel)
 		return index;
 
@@ -1616,7 +1877,6 @@ static __isl_give isl_multi_pw_aff *transform_index(
 		return index;
 	if (!isl_map_has_tuple_name(access->access, isl_dim_out))
 		return index;
-
 	name = get_outer_array_name(access->access);
 	i = find_array_index(data->kernel, name);
 	if (i < 0)
@@ -1629,14 +1889,15 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	group = find_ref_group(data->local_array, access);
 	if (!group) {
 		data->global = 1;
-		return index;
+		goto cost_model_call;
 	}
-
 	tile = gpu_array_ref_group_tile(group);
 	data->global = !tile;
-	if (!tile)
-		return index;
 
+	if (!tile)
+	{
+		goto cost_model_call;
+	}
 	space = isl_space_domain(isl_multi_aff_get_space(tile->tiling));
 	space = isl_space_range(isl_space_unwrap(space));
 	space = isl_space_map_from_set(space);
@@ -1651,8 +1912,30 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	tiling = isl_multi_pw_aff_pullback_pw_multi_aff(tiling, pma);
 
 	index = tile_outer(index, tiling);
-
 	return index;
+
+	long ideal_warp_size;
+	isl_map * taccess;
+cost_model_call:
+	if(data->kernel)
+	{
+		taccess = create_transformed_access(index);
+		if(isl_map_dim(taccess,isl_dim_in) && taccess)
+		{
+			const char * array_name = get_array_name(taccess);
+			ideal_warp_size = texture_cost_model(taccess, sizes);
+			printf(" \n %s === %lu", array_name, ideal_warp_size);
+			update_array_cost(ideal_warp_size,data->array);
+		}
+	}
+	else
+	{
+		update_array_cost(10000,data->array);
+	}
+	if(taccess)
+		isl_map_free(taccess);
+	return index;
+
 }
 
 /* Dereference "expr" by adding an index [0].
@@ -1815,7 +2098,7 @@ static __isl_give isl_ast_expr *transform_expr(__isl_take isl_ast_expr *expr,
 		return dereference(expr);
 	if (!data->array->linearize)
 		return expr;
-
+	printf("\n [info]linearizing for array %s --> %d",data->array->name,data->array->linearize);
 	return gpu_local_array_info_linearize_index(data->local_array, expr);
 }
 
@@ -1854,6 +2137,7 @@ static __isl_give isl_ast_node *create_domain_leaf(
 		return isl_ast_node_free(node);
 
 	schedule = isl_ast_build_get_schedule(build);
+
 	map = isl_map_reverse(isl_map_from_union_map(schedule));
 	iterator_map = isl_pw_multi_aff_from_map(map);
 	if (kernel)
@@ -5589,14 +5873,21 @@ static __isl_give isl_printer *generate(__isl_take isl_printer *p,
 			p = print_cpu(p, scop, options);
 		isl_schedule_free(schedule);
 	} else {
+
 		schedule = map_to_device(gen, schedule);
+
 		gen->tree = generate_code(gen, schedule);
 		p = ppcg_set_macro_names(p);
 		p = ppcg_print_exposed_declarations(p, prog->scop);
+		int kernels_from_scop = gen->kernel_id - gen->kernel_cnt_prev;
+		printf("\n\n # of Kernels extracted from SCoP : ----- %d ",kernels_from_scop);
+		scop->kernels_extracted = kernels_from_scop;
+		gen->kernel_cnt_prev = gen->kernel_id;
 		p = gen->print(p, gen->prog, gen->tree, &gen->types,
 				    gen->print_user);
 		isl_ast_node_free(gen->tree);
 	}
+
 
 	gpu_prog_free(prog);
 
@@ -5630,6 +5921,7 @@ int generate_gpu(isl_ctx *ctx, const char *input, FILE *out,
 	gen.sizes = extract_sizes_from_str(ctx, options->sizes);
 	gen.options = options;
 	gen.kernel_id = 0;
+	gen.kernel_cnt_prev = 0;
 	gen.print = print;
 	gen.print_user = user;
 	gen.types.n = 0;
@@ -5642,10 +5934,12 @@ int generate_gpu(isl_ctx *ctx, const char *input, FILE *out,
 
 	r = ppcg_transform(ctx, input, out, options, &generate_wrap, &gen);
 
+
 	if (options->debug->dump_sizes) {
 		isl_union_map_dump(gen.used_sizes);
 		isl_union_map_free(gen.used_sizes);
 	}
+
 
 	isl_union_map_free(gen.sizes);
 	for (i = 0; i < gen.types.n; ++i)
@@ -5737,6 +6031,7 @@ void *gpu_prog_free(struct gpu_prog *prog)
 {
 	if (!prog)
 		return NULL;
+
 	free_array_info(prog);
 	free_stmts(prog->stmts, prog->n_stmts);
 	isl_union_map_free(prog->any_to_outer);

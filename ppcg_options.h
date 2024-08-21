@@ -74,6 +74,13 @@ struct ppcg_options {
 	char *save_schedule_file;
 	/* Name of file for loading schedule or NULL. */
 	char *load_schedule_file;
+
+	/* Use surface memory optimization. */
+	int use_surface_memory;
+
+	/* Peform texture,surface, constant memory optimizations*/
+	int memory_opts;
+
 };
 
 ISL_ARG_DECL(ppcg_debug_options, struct ppcg_debug_options,
