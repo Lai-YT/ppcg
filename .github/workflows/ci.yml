@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - ppcg-0.06-text
+  pull_request:
+    branches:
+      - ppcg-0.06-text
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:18.04
+    env:
+      # to allow using Node.js 16
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+    steps:
+    - name: Checkout repository with submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Install dependencies
+      run: apt-get update && apt-get install -y automake autoconf libtool pkg-config libgmp3-dev libyaml-dev libclang-dev llvm clang git make
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      # NOTE: compiling with default compiler (gcc) causes "/usr/bin/ld: error: ppcg_options.o: requires unsupported dynamic reloc 11; recompile with -fPIC"
+      run: CC=clang CXX=clang++ ./configure
+    - name: make
+      run: make -j
