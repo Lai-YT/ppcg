@@ -1597,20 +1597,20 @@ int linearize_set(isl_set * access_iter, int *block_sizes)
 	// Add constraint
 	linearization = isl_map_add_constraint(linearization, c);
 
-	isl_printer * p1 = isl_printer_to_str(isl_map_get_ctx(linearization));
-	p1 = isl_printer_print_map(p1, linearization);
-	char * d1 = isl_printer_get_str(p1);
-	printf("\n Linearization Map : %s",d1);
-	isl_printer_free(p1);
+	// isl_printer * p1 = isl_printer_to_str(isl_map_get_ctx(linearization));
+	// p1 = isl_printer_print_map(p1, linearization);
+	// char * d1 = isl_printer_get_str(p1);
+	// printf("\n Linearization Map : %s",d1);
+	// isl_printer_free(p1);
 
 
 	isl_set * linearized_iters = isl_set_apply(isl_set_copy(access_iter), linearization);
 
-	isl_printer * p = isl_printer_to_str(isl_set_get_ctx(linearized_iters));
-	p = isl_printer_print_set(p, linearized_iters);
-	char * d = isl_printer_get_str(p);
-	//printf("\n Linearized iter : %s",d);
-	isl_printer_free(p);
+	// isl_printer * p = isl_printer_to_str(isl_set_get_ctx(linearized_iters));
+	// p = isl_printer_print_set(p, linearized_iters);
+	// char * d = isl_printer_get_str(p);
+	// //printf("\n Linearized iter : %s",d);
+	// isl_printer_free(p);
 
 	//printf("[3] Set size: %lu ",isl_val_get_num_si(isl_set_count_val(linearized_iters)));
 
@@ -1662,18 +1662,18 @@ int analyze_cost_spatial_locality(isl_map *taccess, int * block_sizes)
 	}
 
 	//printf(" \n %d and %d \n\n", isl_map_is_injective(taccess), isl_map_is_bijective(taccess));
-	isl_printer * p = isl_printer_to_str(isl_set_get_ctx(access_loc));
-	p = isl_printer_print_set(p, access_loc);
-	char * d = isl_printer_get_str(p);
-	printf("\n Constructed Set : %s",d);
-	isl_printer_free(p);
+	// isl_printer * p = isl_printer_to_str(isl_set_get_ctx(access_loc));
+	// p = isl_printer_print_set(p, access_loc);
+	// char * d = isl_printer_get_str(p);
+	// printf("\n Constructed Set : %s",d);
+	// isl_printer_free(p);
 	//printf("\n [1] Set size: %lu ",isl_val_get_num_si(isl_set_count_val(access_loc)));
 	isl_set * access_iter = isl_set_apply(access_loc, isl_map_copy(taccess));
-	p = isl_printer_to_str(isl_set_get_ctx(access_iter));
-	p = isl_printer_print_set(p, access_iter);
-	d = isl_printer_get_str(p);
-	printf("\n Constructed Set : %s",d);
-	isl_printer_free(p);
+	// p = isl_printer_to_str(isl_set_get_ctx(access_iter));
+	// p = isl_printer_print_set(p, access_iter);
+	// d = isl_printer_get_str(p);
+	// printf("\n Constructed Set : %s",d);
+	// isl_printer_free(p);
 	//printf("\n [2] Set size: %lu ",isl_val_get_num_si(isl_set_count_val(access_iter)));
 
 	int ideal_warp_size = linearize_set(access_iter, block_sizes);
@@ -1698,22 +1698,22 @@ __isl_give isl_map * create_transformed_access(isl_multi_pw_aff *mpa)
 	// Generate original map
 	isl_map *taccess =  isl_map_from_multi_pw_aff(isl_multi_pw_aff_copy(mpa));
 
-	isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
-	p = isl_printer_print_map(p, taccess);
-	char * d = isl_printer_get_str(p);
-	//printf("\n Transformed Map : %s",d);
-	isl_printer_free(p);
+	// isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	// p = isl_printer_print_map(p, taccess);
+	// char * d = isl_printer_get_str(p);
+	// //printf("\n Transformed Map : %s",d);
+	// isl_printer_free(p);
 
 
 	// Project out the inner dimensions
 	int inner_dim = isl_map_dim(taccess, isl_dim_in);
 	taccess = isl_map_project_out(taccess, isl_dim_in,0, inner_dim);
 
-	p = isl_printer_to_str(isl_map_get_ctx(taccess));
-	p = isl_printer_print_map(p, taccess);
-	d = isl_printer_get_str(p);
-	printf("\n Transformed Map : %s",d);
-	isl_printer_free(p);
+	// p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	// p = isl_printer_print_map(p, taccess);
+	// d = isl_printer_get_str(p);
+	// printf("\n Transformed Map : %s",d);
+	// isl_printer_free(p);
 
 
 	// Project out all but thread dimensions
@@ -1732,19 +1732,19 @@ __isl_give isl_map * create_transformed_access(isl_multi_pw_aff *mpa)
 
 	taccess = isl_map_project_out(taccess, isl_dim_param,0, proj_dims);
 
-	p = isl_printer_to_str(isl_map_get_ctx(taccess));
-	p = isl_printer_print_map(p, taccess);
-	d = isl_printer_get_str(p);
-	printf("\n Transformed Map : %s",d);
-	isl_printer_free(p);
+	// p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	// p = isl_printer_print_map(p, taccess);
+	// d = isl_printer_get_str(p);
+	// printf("\n Transformed Map : %s",d);
+	// isl_printer_free(p);
 
 	//isl_map_free(taccess);
 	//taccess = isl_map_compute_divs(taccess);
 	//isl_set * pset = isl_map_params(taccess);
 	//isl_set *oset = isl_map_domain(taccess);
 	int outer_dim = isl_map_dim(taccess, isl_dim_param);
-	printf("Outer_dim %d",outer_dim);
-	fflush(stdout);
+	// printf("Outer_dim %d",outer_dim);
+	// fflush(stdout);
 	if(!outer_dim)
 	{
 		isl_map_free(taccess);
@@ -1760,12 +1760,12 @@ __isl_give isl_map * create_transformed_access(isl_multi_pw_aff *mpa)
 
 int texture_cost_model(isl_map * taccess, int * block_sizes)
 {
-	isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
-	p = isl_printer_print_map(p, taccess);
-	char * d = isl_printer_get_str(p);
-	printf("\n Transformed Map : %s",d);
-	isl_printer_free(p);
-	fflush(stdout);
+	// isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
+	// p = isl_printer_print_map(p, taccess);
+	// char * d = isl_printer_get_str(p);
+	// printf("\n Transformed Map : %s",d);
+	// isl_printer_free(p);
+	// fflush(stdout);
 	taccess = isl_map_reset_tuple_id(taccess, isl_dim_in);
 	int ideal_warp_size = analyze_cost_spatial_locality(taccess, block_sizes);
 	return ideal_warp_size;
@@ -1846,18 +1846,18 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	if(data->kernel!=NULL)
 	{
 		sizes = data->kernel->block_dim;
-		printf("\n tile sizes %d %d %d ", sizes[0], sizes[1], sizes[2]);
+		// printf("\n tile sizes %d %d %d ", sizes[0], sizes[1], sizes[2]);
 	}
-	isl_printer *p = isl_printer_to_str(isl_pw_multi_aff_get_ctx(iterator_map));
-	p = isl_printer_print_pw_multi_aff(p, iterator_map);
-	char * d = isl_printer_get_str(p);
-	printf("\n Iterator Map : %s",d);
-	isl_printer_free(p);
-	p = isl_printer_to_str(isl_multi_pw_aff_get_ctx(index));
-	p = isl_printer_print_multi_pw_aff(p, index);
-	d = isl_printer_get_str(p);
-	printf("\n Original Index : %s",d);
-	isl_printer_free(p);
+	// isl_printer *p = isl_printer_to_str(isl_pw_multi_aff_get_ctx(iterator_map));
+	// p = isl_printer_print_pw_multi_aff(p, iterator_map);
+	// char * d = isl_printer_get_str(p);
+	// printf("\n Iterator Map : %s",d);
+	// isl_printer_free(p);
+	// p = isl_printer_to_str(isl_multi_pw_aff_get_ctx(index));
+	// p = isl_printer_print_multi_pw_aff(p, index);
+	// d = isl_printer_get_str(p);
+	// printf("\n Original Index : %s",d);
+	// isl_printer_free(p);
 
 	index = isl_multi_pw_aff_pullback_pw_multi_aff(index, iterator_map);
 	if (!data->kernel)
@@ -1917,7 +1917,7 @@ cost_model_call:
 		{
 			const char * array_name = get_array_name(taccess);
 			ideal_warp_size = texture_cost_model(taccess, sizes);
-			printf(" \n %s === %lu", array_name, ideal_warp_size);
+			// printf(" \n %s === %lu", array_name, ideal_warp_size);
 			update_array_cost(ideal_warp_size,data->array);
 		}
 	}
@@ -2090,7 +2090,7 @@ static __isl_give isl_ast_expr *transform_expr(__isl_take isl_ast_expr *expr,
 		return dereference(expr);
 	if (!data->array->linearize)
 		return expr;
-	printf("\n [info]linearizing for array %s --> %d",data->array->name,data->array->linearize);
+	// printf("\n [info]linearizing for array %s --> %d",data->array->name,data->array->linearize);
 	return gpu_local_array_info_linearize_index(data->local_array, expr);
 }
 
@@ -5869,7 +5869,7 @@ static __isl_give isl_printer *generate(__isl_take isl_printer *p,
 		p = ppcg_set_macro_names(p);
 		p = ppcg_print_exposed_declarations(p, prog->scop);
 		int kernels_from_scop = gen->kernel_id - gen->kernel_cnt_prev;
-		printf("\n\n # of Kernels extracted from SCoP : ----- %d ",kernels_from_scop);
+		// printf("\n\n # of Kernels extracted from SCoP : ----- %d ",kernels_from_scop);
 		scop->kernels_extracted = kernels_from_scop;
 		gen->kernel_cnt_prev = gen->kernel_id;
 		p = gen->print(p, gen->prog, gen->tree, &gen->types,

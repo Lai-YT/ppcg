@@ -195,13 +195,13 @@ static __isl_give isl_printer *copy_array_from_device(
 {
 	if((array->is_in_texture==false && array->is_in_surface==false) || (array->is_in_texture==true && array->linearize && !array->is_read_only))
 	{
-		printf("\n copy array from device global : %s",array->name);
+		// printf("\n copy array from device global : %s",array->name);
 		p = copy_array_from_device_global_memory(p,array);
 	}
 	else if(array->is_in_surface || (array->is_in_texture && !array->is_read_only))
 	{
 		p = copy_cuda_array_from_device(p,array);
-		printf("\n copy array from cuARR : %s",array->name);
+		// printf("\n copy array from cuARR : %s",array->name);
 	}
 	return p;
 }
@@ -704,11 +704,11 @@ static __isl_give isl_printer *print_host_user(__isl_take isl_printer *p,
 
 	p = copy_data_from_device_to_device(p,kernel);
 
-	printf("printing kernel");
+	// printf("printing kernel");
 
 	print_kernel(data->prog, kernel, data->cuda);
 
-	printf("printing kernel done");
+	// printf("printing kernel done");
 
 	return p;
 }
@@ -728,8 +728,8 @@ static __isl_give isl_printer *print_host_code(__isl_take isl_printer *p,
 	p = gpu_print_macros(p, tree);
 	p = isl_ast_node_print(tree, p, print_options);
 
-	printf("\n freeing done 1");
-	fflush(stdout);
+	// printf("\n freeing done 1");
+	// fflush(stdout);
 	return p;
 }
 
@@ -763,8 +763,8 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 	print_texture_or_surface_decl(tp, prog);
 	isl_printer_free(tp);
 
-	printf("\n Clearing done");
-	fflush(stdout);
+	// printf("\n Clearing done");
+	// fflush(stdout);
 
 	// Clearing is_texture or is_surface required
 	clear_texture_flags(prog);

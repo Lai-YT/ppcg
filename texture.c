@@ -5,7 +5,7 @@
  *
  * Written by Abhishek Patwardhan
  * IIT Hyderabad, India
- *	
+ *
  */
 
 #include <isl/aff.h>
@@ -32,19 +32,19 @@ void print_analysis(struct kernel_analysis * kernel_analysis)
 		{
 			printf("\n\t\t\t After kernel %d : %d",j,analysis_tableu[i].latest_access[j]);
 		}
-		printf("\n");	
+		printf("\n");
 	}
-	printf("\n\t ---- End ------");	
+	printf("\n\t ---- End ------");
 	printf("\n\n");
 }
 
 bool print_device_arrays_or_not(struct gpu_array_info * array)
 {
-	printf("\n checking for %s",array->name);
+	// printf("\n checking for %s",array->name);
 	if(array->linearize)
 		return true;
 	if(is_ccp_greater_than_two && (array->is_in_texture || array->is_in_surface))
-		return false;	
+		return false;
 	if(!is_ccp_greater_than_two && array->is_in_texture && array->is_read_only)
 		return false;
 	return true;
@@ -70,7 +70,7 @@ void update_types_for_array(char* name,char* type)
 		const char * tmp = extract_array_name_from_access(t->access_expr);
 		if(!strcmp(tmp,name))
 		{
-			t->type = type;		
+			t->type = type;
 		}
 		t=t->next;
 	}
@@ -83,8 +83,8 @@ void surface_temp_decide_types(int n_array,struct gpu_array_info * arrays)
 	{
 		if(arrays[i].is_in_surface)
 		{
-			update_types_for_array(arrays[i].name,arrays[i].type);	
-		}		
+			update_types_for_array(arrays[i].name,arrays[i].type);
+		}
 	}
 }
 */
@@ -105,7 +105,7 @@ void surface_temp_decide_types(int n_array,struct gpu_array_info * arrays)
 			if(!strcmp(t->tex_array->name,arr->name))
 				break;
 			else
-				t=t->next;	
+				t=t->next;
 		}
 		if(!strcmp(t->tex_array->name,arr->name))
 			return ;
@@ -140,7 +140,7 @@ __isl_give isl_printer *bind_linear_texture(__isl_take isl_printer *p, struct gp
 __isl_give isl_printer *print_dimensions_as_args(__isl_take isl_printer *p, struct gpu_array_info*  array)
 {
 	int i;
-  	for (i = array->n_index -1; i >=0 ; i--) 
+  	for (i = array->n_index -1; i >=0 ; i--)
 	{
 		if(i!=array->n_index -1)
 			p = isl_printer_print_str(p,", ");
@@ -155,7 +155,7 @@ __isl_give isl_printer *print_dimensions_as_args(__isl_take isl_printer *p, stru
 __isl_give isl_printer *print_linearized_dimensions(__isl_take isl_printer *p, struct gpu_array_info*  array)
 {
 	int i;
-  	for (i = array->n_index -1; i >=0 ; i--) 
+  	for (i = array->n_index -1; i >=0 ; i--)
 	{
 		if(i!=array->n_index -1)
 			p = isl_printer_print_str(p,"* ");
@@ -173,9 +173,9 @@ __isl_give isl_printer *print_linearized_dimensions(__isl_take isl_printer *p, s
 __isl_give isl_printer *print_surface_read_to_temp(__isl_take isl_printer *p, struct ppcg_kernel *kernel)
 {
 	struct surf_read_expressions *next, * t = kernel->decl;
-	printf("print surface read to temp called");	
+	printf("print surface read to temp called");
 	if(t==NULL)
-		printf("------ NULL ---------");	
+		printf("------ NULL ---------");
 	while(t!=NULL)
 	{
 		printf("\n surface access read printed for %s",t->type);
@@ -216,7 +216,7 @@ __isl_give isl_printer *malloc_linearized_array(__isl_take isl_printer *p, struc
 		p = isl_printer_print_str(p, array->name);
 		p = isl_printer_print_str(p,", ");
 		p = print_linearized_dimensions(p,array);
-		p = isl_printer_print_str(p,", 1");			
+		p = isl_printer_print_str(p,", 1");
 		if(is_in_surface)
 			p = isl_printer_print_str(p,", cudaArraySurfaceLoadStore");
 		p = isl_printer_print_str(p,");");
@@ -245,7 +245,7 @@ __isl_give isl_printer *malloc_2d_array(__isl_take isl_printer *p, struct gpu_ar
 		p = isl_printer_print_str(p,", ");
 		p = print_dimensions_as_args(p,array);
 		if(array->n_index==1)
-			p = isl_printer_print_str(p,", 1");			
+			p = isl_printer_print_str(p,", 1");
 		if(is_in_surface)
 			p = isl_printer_print_str(p,", cudaArraySurfaceLoadStore");
 		p = isl_printer_print_str(p,");");
@@ -376,11 +376,11 @@ __isl_give isl_printer * handle_3d_copy_between_host_to_cu_array(__isl_take isl_
 		p = isl_printer_start_line(p);
 		p = isl_printer_print_str(p,"cudaMemcpy3DParms ");
 		p = isl_printer_print_str(p,copy_param_name);
-		
+
 		p = isl_printer_print_str(p,"= {0}");
 		p = isl_printer_print_str(p, ";");
 		p = isl_printer_end_line(p);
-		
+
 		p = isl_printer_start_line(p);
 		p = isl_printer_print_str(p,copy_param_name);
 		if(direction==to_device)
@@ -392,7 +392,7 @@ __isl_give isl_printer * handle_3d_copy_between_host_to_cu_array(__isl_take isl_
 
 		p = isl_printer_print_str(p,"= make_cudaPitchedPtr((void*)");
 		if(direction==among_device)
-			p = isl_printer_print_str(p, "dev_");				
+			p = isl_printer_print_str(p, "dev_");
 		p = isl_printer_print_str(p, array->name);
 		p = isl_printer_print_str(p, ", extent_");
 		p = isl_printer_print_str(p, array->name);
@@ -450,7 +450,7 @@ __isl_give isl_printer * handle_3d_copy_between_host_to_cu_array(__isl_take isl_
 
 __isl_give isl_printer * copy_data_from_device_to_device(__isl_take isl_printer * p,struct ppcg_kernel *kernel)
 {
-	
+
 	int i;
 	if(is_ccp_greater_than_two)
 	 return p ;
@@ -463,7 +463,7 @@ __isl_give isl_printer * copy_data_from_device_to_device(__isl_take isl_printer 
 			else
 				p = handle_3d_copy_between_host_to_cu_array(p,kernel->array[i].array,among_device);
 		}
-	}	
+	}
 	p = isl_printer_start_line(p);
 	p = isl_printer_end_line(p);
 	return p;
@@ -474,7 +474,7 @@ __isl_give isl_printer * copy_cuda_array_from_device(__isl_take isl_printer *p, 
 {
 
 		if(array->n_index<3)
-			p = memcpy_2d_array_from_device(p,array);	
+			p = memcpy_2d_array_from_device(p,array);
 		else
 		{
 			printf("--------------3d copy for %s %d",array->name,array->n_index);
@@ -491,11 +491,11 @@ __isl_give isl_printer *bind_texture_or_surface(__isl_take isl_printer *p, struc
 		p = isl_printer_end_line(p);
 		if(array->linearize)
 		{
-			p = bind_linear_texture(p,array);					
+			p = bind_linear_texture(p,array);
 		}
 		else if(array->n_index==1)
 		{
-			p = declare_cuda_array(p,array);	
+			p = declare_cuda_array(p,array);
 			p = declare_channel_format(p,array);
 			p = malloc_linearized_array(p,array,is_surface_to_bind);
 			p = memcpy_2d_array(p,array);
@@ -507,7 +507,7 @@ __isl_give isl_printer *bind_texture_or_surface(__isl_take isl_printer *p, struc
 		else if(array->n_index==2)
 		{
 			p = declare_cuda_array(p,array);
-			p = declare_channel_format(p,array); 
+			p = declare_channel_format(p,array);
 			p = malloc_2d_array(p,array,is_surface_to_bind);
 			p = memcpy_2d_array(p,array);
 			if(is_surface_to_bind)
@@ -518,7 +518,7 @@ __isl_give isl_printer *bind_texture_or_surface(__isl_take isl_printer *p, struc
 		else if(array->n_index==3)
 		{
 			p = declare_cuda_array(p,array);
-			p = declare_channel_format(p,array); 
+			p = declare_channel_format(p,array);
 			p = declare_cuda_extent(p,array);
 			p = malloc_3d_cu_array(p,array,is_surface_to_bind);
 			p = handle_3d_copy_between_host_to_cu_array(p,array,to_device);
@@ -526,7 +526,7 @@ __isl_give isl_printer *bind_texture_or_surface(__isl_take isl_printer *p, struc
 				p = bind_cu_array_to_surface(p,array);
 			else
 				p = bind_cu_array_to_texture(p,array);
-		}	
+		}
 		return p;
 }
 
@@ -550,9 +550,9 @@ __isl_give isl_printer *bind_texture_or_surface(__isl_take isl_printer *p, struc
 			p = isl_printer_print_str(p, "texRef_");
 			p = isl_printer_print_str(p, t->tex_array->name);
 			p = isl_printer_print_str(p, ";");
-			p = isl_printer_end_line(p); 
-			t=t->next;	
-	} 		 
+			p = isl_printer_end_line(p);
+			t=t->next;
+	}
 
 }*/
 
@@ -609,7 +609,7 @@ isl_printer * print_texture_or_surface_decl(isl_printer *p, struct gpu_prog * pr
 			p = print_texture_declaration(p,&prog->array[i],false);
 		else if (prog->array[i].is_in_surface)
 			p = print_surface_declaration(p,&prog->array[i],false);
-	} 
+	}
 	p=isl_printer_print_str(p,"\n#elif DEVICECODE \n");
 	for(i=0;i<prog->n_array;i++)
 	{
@@ -617,19 +617,19 @@ isl_printer * print_texture_or_surface_decl(isl_printer *p, struct gpu_prog * pr
 			p = print_texture_declaration(p,&prog->array[i],true);
 		else if (prog->array[i].is_in_surface)
 			p = print_surface_declaration(p,&prog->array[i],true);
-	} 
+	}
 	p=isl_printer_print_str(p,"\n #endif \n");
 	return p;
 }
 __isl_give isl_printer *bind_device_textures_surfaces(__isl_take isl_printer *p, struct gpu_prog *prog)
 {
 	int i;
-	for (i = 0; i < prog->n_array; ++i) 
+	for (i = 0; i < prog->n_array; ++i)
 	{
 		if(prog->array[i].is_in_texture)
 		{
 			bind_texture_or_surface(p,&prog->array[i],false);
-		}	
+		}
 		else if(prog->array[i].is_in_surface)
 		{
 			bind_texture_or_surface(p,&prog->array[i],true);
@@ -645,10 +645,10 @@ __isl_give isl_printer *bind_device_textures_surfaces(__isl_take isl_printer *p,
 __isl_give isl_printer *free_cuda_array(__isl_take isl_printer *p,struct gpu_prog *prog)
 {
 	int i;
-	for (i = 0; i < prog->n_array; ++i) 
+	for (i = 0; i < prog->n_array; ++i)
 	{
 		if((prog->array[i].is_in_texture || prog->array[i].is_in_surface) && !prog->array[i].linearize)
-		{	
+		{
 			p = isl_printer_start_line(p);
 			p = isl_printer_print_str(p,"cudaFreeArray");
 			p = isl_printer_print_str(p,"(");
@@ -669,9 +669,9 @@ __isl_give isl_printer *unbind_device_textures_surfaces(__isl_take isl_printer *
 	int i;
 	p = isl_printer_start_line(p);
  	p = isl_printer_end_line(p);
-	for (i = 0; i < prog->n_array; ++i) 
+	for (i = 0; i < prog->n_array; ++i)
 	{
-		if(prog->array[i].is_in_texture) 
+		if(prog->array[i].is_in_texture)
 		{
 			//generate statement like cudaUnbindTexture(tex_Ta);
 		 	p = isl_printer_start_line(p);
@@ -679,9 +679,9 @@ __isl_give isl_printer *unbind_device_textures_surfaces(__isl_take isl_printer *
 			p = isl_printer_print_str(p,"texRef_");
 			p = isl_printer_print_str(p, prog->array[i].name);
 			p = isl_printer_print_str(p, ");");
-			p = isl_printer_end_line(p);  
+			p = isl_printer_end_line(p);
 		}
-		
+
 	}
 	p = isl_printer_start_line(p);
 	p = isl_printer_end_line(p);
@@ -697,17 +697,17 @@ __isl_give isl_printer *unbind_device_textures_surfaces(__isl_take isl_printer *
 __isl_give isl_printer *declare_device_textures(__isl_take isl_printer *p, struct gpu_prog *prog)
 {
 	int i;
-	for (i = 0; i < prog->n_array; ++i) 
+	for (i = 0; i < prog->n_array; ++i)
 	{
 		/* FIXME As of now assuming that arrays are declared and allocated memory using cudamalloc.
 		if (!gpu_array_requires_device_allocation(&prog->array[i]))
 			continue;
-			
-		    TODO cudaReadModeElementType, type checking 	
+
+		    TODO cudaReadModeElementType, type checking
 		*/
 		// generate statement like texture<int,1,cudaReadModeElementType> tex_Ta;
-/*		if(prog->array[i].is_in_texture) 
-		{		
+/*		if(prog->array[i].is_in_texture)
+		{
 			p = isl_printer_start_line(p);
 			p = isl_printer_print_str(p,"extern texture<");
 			p = isl_printer_print_str(p, prog->array[i].type);
@@ -722,9 +722,9 @@ __isl_give isl_printer *declare_device_textures(__isl_take isl_printer *p, struc
 			p = isl_printer_print_str(p, prog->array[i].name);
 			p = isl_printer_print_str(p, ";");
 			p = isl_printer_end_line(p);
-			
+
 		}
-		
+
 	}
 	p = isl_printer_start_line(p);
 	p = isl_printer_end_line(p);
@@ -735,17 +735,17 @@ __isl_give isl_printer *declare_device_textures(__isl_take isl_printer *p, struc
 __isl_give isl_printer * declare_device_textures_for_hostfile(__isl_take isl_printer *p,struct gpu_prog *prog)
 {
 	int i;
-	for (i = 0; i < prog->n_array; ++i) 
+	for (i = 0; i < prog->n_array; ++i)
 	{
 		/* FIXME As of now assuming that arrays are declared and allocated memory using cudamalloc.
 		if (!gpu_array_requires_device_allocation(&prog->array[i]))
 			continue;
-			
-		    TODO cudaReadModeElementType, type checking 	
+
+		    TODO cudaReadModeElementType, type checking
 		*/
 		// generate statement like texture<int,1,cudaReadModeElementType> tex_Ta;
-/*		if(prog->array[i].is_in_texture) 
-		{		
+/*		if(prog->array[i].is_in_texture)
+		{
 			p = isl_printer_start_line(p);
 			p = isl_printer_print_str(p,"texture<");
 			p = isl_printer_print_str(p, prog->array[i].type);
@@ -762,7 +762,7 @@ __isl_give isl_printer * declare_device_textures_for_hostfile(__isl_take isl_pri
 			p = isl_printer_end_line(p);
 			insert_tex_decl(&prog->array[i]);
 		}
-		
+
 	}
 	//p = isl_printer_start_line(p);
 	//p = isl_printer_end_line(p);
@@ -787,20 +787,20 @@ __isl_give isl_printer * declare_device_textures_for_hostfile(__isl_take isl_pri
 
 /*void update_analysis(const char *array_name, isl_bool is_access_write)
 {
-	
+
 	if(home_tex_decl)
 	{
 		struct tex_decl * t= home_tex_decl;
 		while(t!=NULL){
 			if(!strcmp(t->tex_array->name,array_name))
 			{
-				enum RWbar updated ; 
+				enum RWbar updated ;
 				if(is_access_write==isl_bool_true)
 				{
-					updated = 
+					updated =
 					if(!t->tex_array->is_written)
 						t->tex_array->is_written=true;
-				}	
+				}
 				else
 				{
 					updated = get_updated_state(t->latest_access,false);
@@ -809,12 +809,12 @@ __isl_give isl_printer * declare_device_textures_for_hostfile(__isl_take isl_pri
 				return ;
 			}
 			else
-				t=t->next;	
+				t=t->next;
 		}
 	}
-	// ERROR CASE HERE		
+	// ERROR CASE HERE
 }
-*/	
+*/
 
 void clear_texture_flags(struct gpu_prog * prog)
 {
@@ -826,7 +826,7 @@ void clear_texture_flags(struct gpu_prog * prog)
 		prog->array[i].is_read_only=false;
 		prog->array[i].is_write_only=false;
 	}
-} 
+}
 
 void gentemp( char ** temp, isl_ast_expr * expr, int temp_cnt)
 {
@@ -838,14 +838,14 @@ void gentemp( char ** temp, isl_ast_expr * expr, int temp_cnt)
 	isl_printer * new_var_name = isl_printer_to_str(ctx);
 	new_var_name=isl_printer_print_ast_expr(new_var_name,expr);
 	char * d = isl_printer_get_str(new_var_name);
-	//printf("\n original access : %s",d);	
+	//printf("\n original access : %s",d);
 	char * s = "surf_temp_";
 	*temp = (char *)malloc(sizeof(char)*(1+strlen(s)+strlen(d)+strlen(temp_cnt_char)));
 	strcpy(*temp,s);
 	strcat(*temp,d);
 	strcat(*temp,"_");
 	strcat(*temp,temp_cnt_char);
-	s = *temp;	
+	s = *temp;
 	for(i=0;i<strlen(s);i++)
 	{
 		if(s[i]=='[' || s[i]==']')
@@ -861,13 +861,13 @@ void gentemp( char ** temp, isl_ast_expr * expr, int temp_cnt)
 		else if(s[i]=='/')
 			s[i]='d';
 		else if(s[i]=='%')
-			s[i]='m';	
+			s[i]='m';
 		else if(s[i]==' ')
-			s[i]='w';	
-	}	
+			s[i]='w';
+	}
 	//strcpy(*temp,s);
 	//printf(" \n %s",*temp);
-	isl_printer_free(new_var_name);	
+	isl_printer_free(new_var_name);
 	free(temp_cnt_char);
 }
 
@@ -883,7 +883,7 @@ void insert_surf_read_access(__isl_keep isl_ast_expr * expr, struct surf_read_ex
 		//gentemp(&((*read_surf_list)->temp_name),expr);
 		(*read_surf_list)->type = type;
 		(*read_surf_list)->temp_name = temp_name;
-		(*read_surf_list)->next=NULL;	
+		(*read_surf_list)->next=NULL;
 		//return (*read_surf_list)->temp_name ;
 	}
 	else{
@@ -895,13 +895,13 @@ void insert_surf_read_access(__isl_keep isl_ast_expr * expr, struct surf_read_ex
 				return ;
 			}
 			else
-				t=t->next;	
+				t=t->next;
 		}
 		if(isl_ast_expr_trees_compare(t->surface_read_expr,expr)==isl_bool_true)
 		{
 			isl_ast_expr_free(expr);
 			return ;
-		}		
+		}
 		else{
 			t ->next = (struct surf_read_expressions*) malloc(sizeof(struct surf_read_expressions));
 			t->next->surface_read_expr=expr;
@@ -919,13 +919,13 @@ void insert_surf_read_access(__isl_keep isl_ast_expr * expr, struct surf_read_ex
 int pet_expr_modify_access_to_var(__isl_keep isl_ast_expr *expr,char *type, struct surf_read_expressions ** read_surf_list, int temp_cnt)
 {
 	//char * temp = insert_surf_read_access(expr,type,read_surf_list);
-	char * temp;	
-	gentemp(&temp,expr,temp_cnt++);	
+	char * temp;
+	gentemp(&temp,expr,temp_cnt++);
 	isl_ast_expr* t_expr=  construct_surface_read_access(expr,type,temp);
 	alter_access(expr,temp);
 	insert_surf_read_access(t_expr,read_surf_list,expr,type,temp);
-	printf("\ninserting done ");
-	fflush(stdout);
+	// printf("\ninserting done ");
+	// fflush(stdout);
 	return temp_cnt;
 
 }
@@ -934,48 +934,48 @@ void decide_texture_profitability(struct kernel_analysis * kernel_analysis)
 {
 	int i,j;
 	struct candidate_info * analysis_tableu = kernel_analysis->analysis_tableu;
-	printf("\n\n");
-	printf("\n\t ---- Printing results of cost model ------");
+	// printf("\n\n");
+	// printf("\n\t ---- Printing results of cost model ------");
 	for(i=0;i<kernel_analysis->candidates_cnt;i++)
 	{
 		if(analysis_tableu[i].array_info->is_in_texture || analysis_tableu[i].array_info->is_in_surface)
 		{
-			int avg_ideal_warp_size = analysis_tableu[i].array_info->texture_cost_ideal_warp_size; 
-			if(analysis_tableu[i].array_info->texture_cost_ref_counter)			
-				avg_ideal_warp_size = (int) avg_ideal_warp_size/analysis_tableu[i].array_info->texture_cost_ref_counter; 	
+			int avg_ideal_warp_size = analysis_tableu[i].array_info->texture_cost_ideal_warp_size;
+			if(analysis_tableu[i].array_info->texture_cost_ref_counter)
+				avg_ideal_warp_size = (int) avg_ideal_warp_size/analysis_tableu[i].array_info->texture_cost_ref_counter;
 			else
-				avg_ideal_warp_size = (int) avg_ideal_warp_size;	
-			if(avg_ideal_warp_size > 65 || analysis_tableu[i].array_info->is_write_only || analysis_tableu[i].array_info->n_index <= 1) 	
+				avg_ideal_warp_size = (int) avg_ideal_warp_size;
+			if(avg_ideal_warp_size > 65 || analysis_tableu[i].array_info->is_write_only || analysis_tableu[i].array_info->n_index <= 1)
 			{
-				printf("\n Unprofitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);	
+				// printf("\n Unprofitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
 				analysis_tableu[i].array_info->is_in_texture = false;
 				analysis_tableu[i].array_info->is_in_surface = false;
 			}
 			else if (analysis_tableu[i].array_info->is_in_texture)
 			{
-				printf("\n Profitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
+				// printf("\n Profitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
 			}
 			else if (analysis_tableu[i].array_info->is_in_surface && avg_ideal_warp_size > 50)
 			{
-printf("\n Unprofitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);	
+// printf("\n Unprofitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
 				analysis_tableu[i].array_info->is_in_texture = false;
 				analysis_tableu[i].array_info->is_in_surface = false;
 
 			}
 			else if(analysis_tableu[i].array_info->is_in_surface && avg_ideal_warp_size < 5)
 			{
-printf("\n Unprofitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);	
+// printf("\n Unprofitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
 				analysis_tableu[i].array_info->is_in_texture = false;
 				analysis_tableu[i].array_info->is_in_surface = false;
 			}
 			else
 			{
-printf("\n Profitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
-			} 				
+// printf("\n Profitable \t %s \t == %d \t",analysis_tableu[i].array_info->name, avg_ideal_warp_size);
+			}
 		}
 	}
-	printf("\n\t ---- End ------");	
-	printf("\n\n");
+	// printf("\n\t ---- End ------");
+	// printf("\n\n");
 }
 
 
@@ -992,7 +992,7 @@ int annotate_node(__isl_keep pet_expr *expr,isl_id_to_ast_expr *ref2expr,struct 
 			isl_ast_expr_modify_access_to_tex_call(ast_expr,candidate->array_info->linearize);
 			isl_ast_expr_free(ast_expr);
 			//expr->type=pet_expr_call;
-			return -1;		
+			return -1;
 		}
 
 	}
@@ -1033,7 +1033,7 @@ void decide_surface_or_texture(struct kernel_analysis * kernel_analysis)
 			{
 				analysis_tableu[i].array_info->is_in_texture=false;
 				analysis_tableu[i].array_info->is_in_surface=false;
-				is_marked_invalid = true;				
+				is_marked_invalid = true;
 				break;
 			}
 			else if(analysis_tableu[i].latest_access[j]==write)
@@ -1067,18 +1067,18 @@ void decide_surface_or_texture(struct kernel_analysis * kernel_analysis)
 		analysis_tableu[i].array_info->is_read_only=is_read_only;
 
 	}
-	printf("\n\t\t ------ Decision of textur or surface -------------");
-	for(i=0;i<kernel_analysis->candidates_cnt;i++)
-	{		
-		printf("\n\t %s \t %d \t %d ",analysis_tableu[i].array_info->name,analysis_tableu[i].array_info->is_in_texture ,analysis_tableu[i].array_info->is_in_surface);
-	}
-	printf("\n\n");
+// 	printf("\n\t\t ------ Decision of textur or surface -------------");
+// 	for(i=0;i<kernel_analysis->candidates_cnt;i++)
+// 	{
+// 		printf("\n\t %s \t %d \t %d ",analysis_tableu[i].array_info->name,analysis_tableu[i].array_info->is_in_texture ,analysis_tableu[i].array_info->is_in_surface);
+// 	}
+// 	printf("\n\n");
 }
 
 enum RWbar get_updated_status(enum RWbar old, bool is_write,bool is_in_loop)
 {
-	printf("\n Is in Loop %d",is_in_loop);
-	switch(old) 
+	// printf("\n Is in Loop %d",is_in_loop);
+	switch(old)
         {
 	      case none :
 		 if(is_write)
@@ -1086,7 +1086,7 @@ enum RWbar get_updated_status(enum RWbar old, bool is_write,bool is_in_loop)
 		 else if(!is_in_loop)
 			return read;
 		 else
-			return read_inside_loop;		
+			return read_inside_loop;
 	      case invalid :
 			return invalid;
 	      case error :
@@ -1098,9 +1098,9 @@ enum RWbar get_updated_status(enum RWbar old, bool is_write,bool is_in_loop)
 			return invalid;
 	      case read :
 		 if(is_write && !is_in_loop)
-			return write;		
+			return write;
 		 else if(!is_write &&!is_in_loop)
-			return read; 
+			return read;
 		else if(is_write && is_in_loop)
 			return write;
 		else if(!is_write && is_in_loop)
@@ -1113,9 +1113,9 @@ enum RWbar get_updated_status(enum RWbar old, bool is_write,bool is_in_loop)
 		 else if(is_write && !is_in_loop)
 			return write;
 		 else if(!is_write && !is_in_loop)
-			return read;	
+			return read;
 	   }
-	
+
 }
 int is_candidate(const char *array_name,struct candidate_info * analysis_tableu,int candidates_cnt)
 {
@@ -1124,10 +1124,10 @@ int is_candidate(const char *array_name,struct candidate_info * analysis_tableu,
 	{
 		if(!strcmp(array_name,analysis_tableu[i].array_info->name))
 		{
-			return i;	
+			return i;
 		}
 	}
-	
+
 	return -1;
 }
 
@@ -1135,13 +1135,13 @@ void update_analysis(struct candidate_info * analysis_tableu, int array_index, i
 {
 	if(is_in_loop<0)
 	{
-		// throw error; 
+		// throw error;
 	}
-	printf("\n\n [update] %s %d %d",analysis_tableu[array_index].array_info->name, is_access_write, is_in_loop);
+	// printf("\n\n [update] %s %d %d",analysis_tableu[array_index].array_info->name, is_access_write, is_in_loop);
 enum RWbar updated = get_updated_status(analysis_tableu[array_index].latest_access[kernel_index],is_access_write,is_in_loop==0?false:true);
-		printf("\n [update] milale %d \n",updated);
-		printf(" Access is %d %d",is_access_write,is_in_loop);
-		fflush(stdout);
+		// printf("\n [update] milale %d \n",updated);
+		// printf(" Access is %d %d",is_access_write,is_in_loop);
+		// fflush(stdout);
 	analysis_tableu[array_index].latest_access[kernel_index] = updated;
 }
 
@@ -1160,10 +1160,10 @@ int for_each_array_access(__isl_keep pet_expr *expr, void *user)
 	is_access = isl_ast_expr_get_type(ast_expr) == isl_ast_expr_op &&
 		isl_ast_expr_get_op_type(ast_expr) == isl_ast_op_access;
 
-	
+
 
 	const char * array_name = get_name(ast_expr);
-	
+
 	if(array_name!=NULL)
 	{
 		analysis_tableu = kernel_analysis->analysis_tableu;
@@ -1173,32 +1173,32 @@ int for_each_array_access(__isl_keep pet_expr *expr, void *user)
 		{
 			bool is_access_write = (pet_expr_access_is_write(expr)==1)?true:false;
 			analysis_tableu[array_index].array_info->is_write_only = (analysis_tableu[array_index].array_info->is_write_only &  is_access_write);
-			
+
 			if(kernel_analysis->is_annotating)
 			{
-				printf("\n\n annotating started");
-				fflush(stdout);
+				// printf("\n\n annotating started");
+				// fflush(stdout);
 				struct surf_read_expressions * surf_read_list = kernel_analysis->read_surface_to_temp;
 				int temp_cnt = kernel_analysis->temp_cnt;
 			temp_cnt = annotate_node(expr,ref2expr,&analysis_tableu[array_index],is_access_write,&surf_read_list,temp_cnt);
 				kernel_analysis->read_surface_to_temp = surf_read_list;
 				kernel_analysis->temp_cnt=temp_cnt;
-				printf(" \n\n ----- annotating done !");			
+				// printf(" \n\n ----- annotating done !");
 			}
 			else
 			{
-		
+
 				if(is_access_write && arg->simulate_R_W)
 				{
-					// simulate read access for +=, -= *=, and /= 
-					printf("\n\n Updating analysis");
-					fflush(stdout);
+					// simulate read access for +=, -= *=, and /=
+					// printf("\n\n Updating analysis");
+					// fflush(stdout);
 					update_analysis (analysis_tableu,array_index,kernel_index, false,kernel_analysis->kernel_loop_depth_count);
 
 				}
 
-		printf("\n\n Updating analysis");
-		fflush(stdout);
+		// printf("\n\n Updating analysis");
+		// fflush(stdout);
 		update_analysis(analysis_tableu,array_index,kernel_index, is_access_write,kernel_analysis->kernel_loop_depth_count);
 			}
 		}
@@ -1217,23 +1217,23 @@ void traverse_pet_tree(__isl_keep pet_tree *tree,isl_id_to_ast_expr *ref2expr,vo
 
 	arg->simulate_R_W = false;
 	if(!arg->kernel_analysis->is_annotating)
-	{	
+	{
 		enum pet_op_type op_type = pet_expr_op_get_type(tree->u.e.expr);
 		if(op_type == pet_op_add_assign || op_type == pet_op_sub_assign || op_type == pet_op_mul_assign || op_type == pet_op_div_assign)
 		{
-			printf("\n simulating R_W ");
+			// printf("\n simulating R_W ");
 			arg->simulate_R_W = true;
 		}
-	}	
+	}
 	//if(arg->kernel_analysis->is_annotating)
 	//{
 	//	pet_tree_foreach_access_expr(tree,&for_each_array_access_mark_texture,arg);
 	//}
 	//else
 	//{
-		printf("checking here -------> %d ",arg->kernel_analysis->is_annotating);
-		pet_tree_foreach_access_expr_postorder(tree,&for_each_array_access,arg);		
-	//}	
+		// printf("checking here -------> %d ",arg->kernel_analysis->is_annotating);
+		pet_tree_foreach_access_expr_postorder(tree,&for_each_array_access,arg);
+	//}
 }
 
 isl_bool visit_kernel_stmts(__isl_keep isl_ast_node *node, void *user)
@@ -1277,7 +1277,7 @@ void mark_is_array_written(struct ppcg_kernel * kernel, struct kernel_analysis *
 			kernel_index=kernel->sequence_no;
 			if(kernel_analysis->analysis_tableu[array_index].latest_access[kernel_index]==write)
 				kernel->array[i].is_written = true;
-		}	
+		}
 	}
 }
 
@@ -1288,7 +1288,7 @@ void traverse_kernel(struct ppcg_kernel *kernel, struct kernel_analysis * kernel
 	if(!kernel_analysis->is_annotating)
 		isl_ast_node_foreach_descendant_top_down_analysis(kernel_tree,&visit_kernel_stmts,(void*)kernel_analysis);
 	else
-		isl_ast_node_foreach_descendant_top_down(kernel_tree,&visit_kernel_stmts,(void*)kernel_analysis);		
+		isl_ast_node_foreach_descendant_top_down(kernel_tree,&visit_kernel_stmts,(void*)kernel_analysis);
 	if(kernel_analysis->is_annotating)
 	{
 		/* TODO : THis might be redundent store home here */
@@ -1309,7 +1309,7 @@ isl_bool visit_gpu_node(__isl_keep isl_ast_node *node, void *user)
 
 	if(isl_ast_node_get_type(node) != isl_ast_node_user)
 		return isl_bool_true;
-	
+
 
 	id = isl_ast_node_get_annotation(node);
 	if(!id)
@@ -1322,17 +1322,18 @@ isl_bool visit_gpu_node(__isl_keep isl_ast_node *node, void *user)
 	isl_id_free(id);
 
 	if (is_user)
-		printf("\n statement ! ");
+	;
+		// printf("\n statement ! ");
 	else
 	{
 		// Now no need : Initialization needed for RWbar
-		 
-		printf("\n new kernel !");
-		fflush(stdout);
+
+		// printf("\n new kernel !");
+		// fflush(stdout);
 		kernel_analysis = (struct kernel_analysis *)user;
 		if(kernel_analysis->is_annotating)
 		{
-			surf_write_temp_counter = 0; 
+			surf_write_temp_counter = 0;
 			kernel_analysis->temp_cnt = 0;
 		}
 		kernel_analysis->kernel_loop_depth_count=0;
@@ -1341,10 +1342,10 @@ isl_bool visit_gpu_node(__isl_keep isl_ast_node *node, void *user)
 		{
 			kernel->sequence_no=kernel_analysis->visited_kernel_cnt;
 			kernel_analysis->visited_kernel_cnt++;
-		}					
+		}
 	}
-	return isl_bool_true;	
-}	
+	return isl_bool_true;
+}
 
 void traverse_gpu_code(isl_ast_node *tree,struct kernel_analysis * kernel_analysis_arg)
 {
@@ -1357,7 +1358,7 @@ void perform_static_analysis(isl_ast_node *tree,struct kernel_analysis * kernel_
 	kernel_analysis_arg->is_annotating = false;
 	return traverse_gpu_code(tree,kernel_analysis_arg);
 
-}	
+}
 void annotate(isl_ast_node *tree,struct kernel_analysis * kernel_analysis)
 {
 	kernel_analysis->is_annotating = true;
@@ -1370,7 +1371,7 @@ void setup_candidate_info(struct candidate_info * table, int index ,struct gpu_a
 	table[index].array_info = array;
 	table[index].latest_access = malloc(sizeof(enum RWbar)*no_of_kernels);
 	for(j =0; j< no_of_kernels ; j++)
-		table[index].latest_access[j] = none;	
+		table[index].latest_access[j] = none;
 	table[index].array_info->is_write_only = true;
 }
 
@@ -1380,24 +1381,24 @@ struct kernel_analysis * setup_candidate_arrays(struct gpu_prog *prog)
 	if(prog->scop!=NULL)
 	{
 		struct texture_candidate **candidate_list = NULL;
-		struct kernel_analysis * kernel_analysis_arg;		
+		struct kernel_analysis * kernel_analysis_arg;
 		int no_of_candidates=0;
 		for(i=0;i<prog->n_array;i++)
 		{
 			if(prog->array[i].n_index>0)
 			{
-				printf("\n %s",prog->array[i].name);
-				no_of_candidates++;	
+				// printf("\n %s",prog->array[i].name);
+				no_of_candidates++;
 			}
 		}
-		printf(" \n Candidates are : %d",no_of_candidates);
+		// printf(" \n Candidates are : %d",no_of_candidates);
 		if(no_of_candidates==0)
 			return NULL;
 		int no_of_kernels = prog->scop->kernels_extracted;
 		struct candidate_info * analysis_table;
-		printf("\n Setting up data structures");
-		printf(" \n #Kernels extracted are : %d",no_of_kernels);
-		printf(" \n Candidates are : %d",no_of_candidates);
+		// printf("\n Setting up data structures");
+		// printf(" \n #Kernels extracted are : %d",no_of_kernels);
+		// printf(" \n Candidates are : %d",no_of_candidates);
 
 	 	analysis_table = (struct candidate_info *)malloc(sizeof(struct candidate_info)*no_of_candidates);
 		int j=0;
@@ -1405,14 +1406,14 @@ struct kernel_analysis * setup_candidate_arrays(struct gpu_prog *prog)
 		{
 			if(prog->array[i].n_index)
 			{
-				printf("\n\t\t %s ",prog->array[i].name);
+				// printf("\n\t\t %s ",prog->array[i].name);
 				setup_candidate_info(analysis_table,j,&prog->array[i],no_of_kernels);
 				j++;
-			}		
+			}
 		}
-		fflush(stdout);	
+		// fflush(stdout);
 		kernel_analysis_arg = (struct kernel_analysis *)malloc(sizeof(struct kernel_analysis));
-		kernel_analysis_arg-> analysis_tableu = analysis_table; 
+		kernel_analysis_arg-> analysis_tableu = analysis_table;
 		kernel_analysis_arg-> visited_kernel_cnt = 0;
 		kernel_analysis_arg-> candidates_cnt = no_of_candidates;
 		kernel_analysis_arg-> kernel_cnt = no_of_kernels;
@@ -1429,26 +1430,25 @@ void texture_optimization(struct gpu_prog *prog,isl_ast_node *tree)
 {
 	// FIXME if double then not a candidate
 	is_ccp_greater_than_two = (prog->scop->options->use_surface_memory)? true : false;
-	is_ccp_greater_than_two? printf("\n Using surfaces \n") : printf("\n Not Using surfaces \n");
-	bool is_memory_opts = (prog->scop->options->memory_opts)? true : false;	
+	// is_ccp_greater_than_two? printf("\n Using surfaces \n") : printf("\n Not Using surfaces \n");
+	bool is_memory_opts = (prog->scop->options->memory_opts)? true : false;
 	if(!is_memory_opts)
 		return;
-	printf("Here");
+	// printf("Here");
 
-	struct kernel_analysis * kernel_analysis_arg =  setup_candidate_arrays(prog);	
+	struct kernel_analysis * kernel_analysis_arg =  setup_candidate_arrays(prog);
 	if(kernel_analysis_arg==NULL)
-		return ;	
+		return ;
 	if(tree==NULL)
 		return ;
-	perform_static_analysis(tree,kernel_analysis_arg);	
+	perform_static_analysis(tree,kernel_analysis_arg);
 
-	print_analysis(kernel_analysis_arg);
+	// print_analysis(kernel_analysis_arg);
 
 	decide_surface_or_texture(kernel_analysis_arg);
 
 	decide_texture_profitability(kernel_analysis_arg);
-	
+
 	annotate(tree,kernel_analysis_arg);
 	//free_variables();
 }
-
