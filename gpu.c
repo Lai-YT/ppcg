@@ -1856,14 +1856,11 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	p = isl_printer_print_pw_multi_aff(p, iterator_map);
 	char * d = isl_printer_get_str(p);
 	printf("\n Iterator Map : %s",d);
-	int n;
-	scanf(" %d", &n);
 	isl_printer_free(p);
 	p = isl_printer_to_str(isl_multi_pw_aff_get_ctx(index));
 	p = isl_printer_print_multi_pw_aff(p, index);
 	d = isl_printer_get_str(p);
 	printf("\n Original Index : %s",d);
-	scanf(" %d", &n);
 	isl_printer_free(p);
 
 
