@@ -38,8 +38,6 @@ struct gpu_stmt_access {
 	/* The reference id of the corresponding pet_expr. */
 	isl_id *ref_id;
 
-
-
 	struct gpu_stmt_access *next;
 };
 

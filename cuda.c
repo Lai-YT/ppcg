@@ -136,6 +136,7 @@ static __isl_give isl_printer *free_device_arrays(__isl_take isl_printer *p,
 			p = isl_printer_end_line(p);
 		}
 	}
+
 	return p;
 }
 
@@ -188,7 +189,6 @@ static __isl_give isl_printer *copy_array_from_device_global_memory(
 	p = isl_printer_end_line(p);
 	return p;
 }
-
 
 static __isl_give isl_printer *copy_array_from_device(
 	__isl_take isl_printer *p, struct gpu_array_info *array)
@@ -573,6 +573,7 @@ static __isl_give isl_printer *clear_device(__isl_take isl_printer *p,
 	p = unbind_device_textures_surfaces(p, prog);
 	p = free_cuda_array(p,prog);
 	p = free_device_arrays(p, prog);
+
 	return p;
 }
 
@@ -658,6 +659,7 @@ static __isl_give isl_printer *print_host_user(__isl_take isl_printer *p,
 		//p = isl_printer_print_str(p,"marker_NO_ID_CASE");
 		return print_device_node(p, node, data->prog);
 	}
+
 	is_user = !strcmp(isl_id_get_name(id), "user");
 	kernel = is_user ? NULL : isl_id_get_user(id);
 	stmt = is_user ? isl_id_get_user(id) : NULL;
@@ -722,9 +724,8 @@ static __isl_give isl_printer *print_host_code(__isl_take isl_printer *p,
 	print_options = isl_ast_print_options_alloc(ctx);
 	print_options = isl_ast_print_options_set_print_user(print_options,
 						&print_host_user, &data);
+
 	p = gpu_print_macros(p, tree);
-
-
 	p = isl_ast_node_print(tree, p, print_options);
 
 	printf("\n freeing done 1");
@@ -744,8 +745,6 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 	struct cuda_info *cuda = user;
 	isl_printer *kernel;
 
-
-
 	kernel = isl_printer_to_file(isl_printer_get_ctx(p), cuda->kernel_c);
 	kernel = isl_printer_set_output_format(kernel, ISL_FORMAT_C);
 	kernel = gpu_print_types(kernel, types, prog);
@@ -758,8 +757,6 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 
 	p = print_host_code(p, prog, tree, cuda);
 
-
-
 	isl_printer *tp = isl_printer_to_file(isl_printer_get_ctx(p), cuda->kernel_h);
 	tp = isl_printer_set_output_format(tp, ISL_FORMAT_C);
 
@@ -771,7 +768,6 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 
 	// Clearing is_texture or is_surface required
 	clear_texture_flags(prog);
-
 
 	return p;
 }
@@ -795,7 +791,6 @@ int generate_cuda(isl_ctx *ctx, struct ppcg_options *options,
 	cuda_open_files(&cuda, input);
 
 	r = generate_gpu(ctx, input, cuda.host_c, options, &print_cuda, &cuda);
-
 
 	cuda_close_files(&cuda);
 

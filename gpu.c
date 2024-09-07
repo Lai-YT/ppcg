@@ -199,8 +199,6 @@ static int extract_array_info(struct gpu_prog *prog,
 	info->n_index = n_index;
 	info->linearize = prog->scop->options->linearize_device_arrays;
 
-
-
 	info->type = strdup(pa->element_type);
 	info->size = pa->element_size;
 	info->local = pa->declared && !pa->exposed;
@@ -316,7 +314,6 @@ void collect_order_dependences(struct gpu_prog *prog)
 
 		prog->array_order = isl_union_map_union(prog->array_order,
 					isl_union_map_copy(array->dep_order));
-
 	}
 
 	isl_union_map_free(accesses);
@@ -380,6 +377,7 @@ static int collect_array_info(struct gpu_prog *prog)
 static void free_array_info(struct gpu_prog *prog)
 {
 	int i;
+
 	for (i = 0; i < prog->n_array; ++i) {
 		free(prog->array[i].type);
 		free(prog->array[i].name);
@@ -1760,8 +1758,6 @@ __isl_give isl_map * create_transformed_access(isl_multi_pw_aff *mpa)
 	return taccess;
 }
 
-
-
 int texture_cost_model(isl_map * taccess, int * block_sizes)
 {
 	isl_printer * p = isl_printer_to_str(isl_map_get_ctx(taccess));
@@ -1863,8 +1859,6 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	printf("\n Original Index : %s",d);
 	isl_printer_free(p);
 
-
-
 	index = isl_multi_pw_aff_pullback_pw_multi_aff(index, iterator_map);
 	if (!data->kernel)
 		return index;
@@ -1874,6 +1868,7 @@ static __isl_give isl_multi_pw_aff *transform_index(
 		return index;
 	if (!isl_map_has_tuple_name(access->access, isl_dim_out))
 		return index;
+
 	name = get_outer_array_name(access->access);
 	i = find_array_index(data->kernel, name);
 	if (i < 0)
@@ -1895,6 +1890,7 @@ static __isl_give isl_multi_pw_aff *transform_index(
 	{
 		goto cost_model_call;
 	}
+
 	space = isl_space_domain(isl_multi_aff_get_space(tile->tiling));
 	space = isl_space_range(isl_space_unwrap(space));
 	space = isl_space_map_from_set(space);
@@ -1932,7 +1928,6 @@ cost_model_call:
 	if(taccess)
 		isl_map_free(taccess);
 	return index;
-
 }
 
 /* Dereference "expr" by adding an index [0].
@@ -2134,7 +2129,6 @@ static __isl_give isl_ast_node *create_domain_leaf(
 		return isl_ast_node_free(node);
 
 	schedule = isl_ast_build_get_schedule(build);
-
 	map = isl_map_reverse(isl_map_from_union_map(schedule));
 	iterator_map = isl_pw_multi_aff_from_map(map);
 	if (kernel)
@@ -5870,9 +5864,7 @@ static __isl_give isl_printer *generate(__isl_take isl_printer *p,
 			p = print_cpu(p, scop, options);
 		isl_schedule_free(schedule);
 	} else {
-
 		schedule = map_to_device(gen, schedule);
-
 		gen->tree = generate_code(gen, schedule);
 		p = ppcg_set_macro_names(p);
 		p = ppcg_print_exposed_declarations(p, prog->scop);
@@ -5884,7 +5876,6 @@ static __isl_give isl_printer *generate(__isl_take isl_printer *p,
 				    gen->print_user);
 		isl_ast_node_free(gen->tree);
 	}
-
 
 	gpu_prog_free(prog);
 
@@ -5931,12 +5922,10 @@ int generate_gpu(isl_ctx *ctx, const char *input, FILE *out,
 
 	r = ppcg_transform(ctx, input, out, options, &generate_wrap, &gen);
 
-
 	if (options->debug->dump_sizes) {
 		isl_union_map_dump(gen.used_sizes);
 		isl_union_map_free(gen.used_sizes);
 	}
-
 
 	isl_union_map_free(gen.sizes);
 	for (i = 0; i < gen.types.n; ++i)
@@ -5989,7 +5978,6 @@ struct gpu_prog *gpu_prog_alloc(isl_ctx *ctx, struct ppcg_scop *scop)
 
 	if (!scop)
 		return NULL;
-
 	prog = isl_calloc_type(ctx, struct gpu_prog);
 	assert(prog);
 
