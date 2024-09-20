@@ -16,7 +16,7 @@
 #include "gpu_print.h"
 #include "print.h"
 #include "util.h"
-//#include "texture.h"
+#include "texture.h"
 
 
 static __isl_give isl_printer *print_cuda_macros(__isl_take isl_printer *p)

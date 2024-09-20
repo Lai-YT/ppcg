@@ -93,3 +93,8 @@ void analyze_cost_spatial_locality(isl_map *taccess, const char * array_name);
 isl_stat isl_ast_node_foreach_descendant_top_down_analysis(
 	__isl_keep isl_ast_node *node,
 	isl_bool (*fn)(__isl_keep isl_ast_node *node, void *user), void *user);
+__isl_give isl_printer *bind_device_textures_surfaces(__isl_take isl_printer *p, struct gpu_prog *prog);
+__isl_give isl_printer *unbind_device_textures_surfaces(__isl_take isl_printer *p, struct gpu_prog *prog);
+__isl_give isl_printer * copy_data_from_device_to_device(__isl_take isl_printer * p,struct ppcg_kernel *kernel);
+__isl_give isl_printer *free_cuda_array(__isl_take isl_printer *p,struct gpu_prog *prog);
+__isl_give isl_printer * copy_cuda_array_from_device(__isl_take isl_printer *p, struct gpu_array_info *array);
